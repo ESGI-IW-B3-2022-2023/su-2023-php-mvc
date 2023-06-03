@@ -11,6 +11,7 @@ if (
 // Initialisation de certaines choses
 use App\Controller\ContactController;
 use App\Controller\IndexController;
+use App\Controller\UserController;
 use App\Entity\User;
 use App\Routing\RouteNotFoundException;
 use App\Routing\Router;
@@ -42,11 +43,6 @@ $config = ORMSetup::createAttributeMetadataConfiguration($paths, $isDevMode);
 $connection = DriverManager::getConnection($dbParams, $config);
 $entityManager = new EntityManager($connection, $config);
 
-$user = new User();
-$user->setName('Ora Morton');
-$entityManager->persist($user);
-$entityManager->flush();
-
 // Twig
 $loader = new FilesystemLoader(__DIR__ . '/../templates/');
 $twig = new Environment($loader, [
@@ -55,7 +51,10 @@ $twig = new Environment($loader, [
 ]);
 
 // Appeler un routeur pour lui transférer la requête
-$router = new Router($twig);
+$router = new Router([
+  Environment::class => $twig,
+  EntityManager::class => $entityManager
+]);
 $router->addRoute(
   'homepage',
   '/',
@@ -69,6 +68,13 @@ $router->addRoute(
   'GET',
   ContactController::class,
   'contact'
+);
+$router->addRoute(
+  'user_create',
+  '/user/create',
+  'GET',
+  UserController::class,
+  'create'
 );
 
 if (php_sapi_name() === 'cli') {
