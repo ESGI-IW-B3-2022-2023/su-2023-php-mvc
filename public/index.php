@@ -12,7 +12,6 @@ if (
 use App\Controller\ContactController;
 use App\Controller\IndexController;
 use App\Controller\UserController;
-use App\Entity\User;
 use App\Routing\RouteNotFoundException;
 use App\Routing\Router;
 use Doctrine\DBAL\DriverManager;
