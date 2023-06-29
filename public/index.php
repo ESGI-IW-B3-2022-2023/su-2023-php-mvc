@@ -1,23 +1,12 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
-if (
-  php_sapi_name() !== 'cli' && // Environnement d'exécution != console
-  preg_match('/\.(ico|png|jpg|jpeg|css|js|gif)$/', $_SERVER['REQUEST_URI'])
-) {
-  return false;
-}
-
 // Initialisation de certaines choses
 use App\Controller\ContactController;
 use App\Controller\IndexController;
-use App\Controller\UserController;
 use App\DependencyInjection\Container;
 use App\Routing\RouteNotFoundException;
 use App\Routing\Router;
-use Doctrine\DBAL\DriverManager;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\ORMSetup;
 use Symfony\Component\Dotenv\Dotenv;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
@@ -25,23 +14,25 @@ use Twig\Loader\FilesystemLoader;
 $dotenv = new Dotenv();
 $dotenv->loadEnv(__DIR__ . '/../.env');
 
-// Doctrine
-$paths = [__DIR__ . '/../src/Entity'];
-$isDevMode = $_ENV['APP_ENV'] === 'dev';
+// DB
+[
+  'DB_HOST'     => $host,
+  'DB_PORT'     => $port,
+  'DB_NAME'     => $dbname,
+  'DB_CHARSET'  => $charset,
+  'DB_USER'     => $user,
+  'DB_PASSWORD' => $password
+] = $_ENV;
 
-// the connection configuration
-$dbParams = [
-  'driver'   => 'pdo_mysql',
-  'host'     => $_ENV['DB_HOST'],
-  'port'     => $_ENV['DB_PORT'],
-  'user'     => $_ENV['DB_USER'],
-  'password' => $_ENV['DB_PASSWORD'],
-  'dbname'   => $_ENV['DB_NAME'],
-];
+$dsn = "mysql:dbname=$dbname;host=$host:$port;charset=$charset";
 
-$config = ORMSetup::createAttributeMetadataConfiguration($paths, $isDevMode);
-$connection = DriverManager::getConnection($dbParams, $config);
-$entityManager = new EntityManager($connection, $config);
+try {
+  $pdo = new PDO($dsn, $user, $password);
+  var_dump($pdo);
+} catch (PDOException $ex) {
+  echo "Erreur lors de la connexion à la base de données : " . $ex->getMessage();
+  exit;
+}
 
 // Twig
 $loader = new FilesystemLoader(__DIR__ . '/../templates/');
@@ -53,35 +44,11 @@ $twig = new Environment($loader, [
 $serviceContainer = new Container();
 $serviceContainer
   ->set(Environment::class, $twig)
-  ->set(EntityManager::class, $entityManager);
+  ->set(PDO::class, $pdo);
 
 // Appeler un routeur pour lui transférer la requête
 $router = new Router($serviceContainer);
-$router->addRoute(
-  'homepage',
-  '/',
-  'GET',
-  IndexController::class,
-  'home'
-);
-$router->addRoute(
-  'contact_page',
-  '/contact',
-  'GET',
-  ContactController::class,
-  'contact'
-);
-$router->addRoute(
-  'user_create',
-  '/user/create',
-  'GET',
-  UserController::class,
-  'create'
-);
-
-if (php_sapi_name() === 'cli') {
-  return;
-}
+$router->registerRoutes();
 
 try {
   $router->execute($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
