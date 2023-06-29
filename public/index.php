@@ -48,20 +48,7 @@ $serviceContainer
 
 // Appeler un routeur pour lui transférer la requête
 $router = new Router($serviceContainer);
-$router->addRoute(
-  'homepage',
-  '/',
-  'GET',
-  IndexController::class,
-  'home'
-);
-$router->addRoute(
-  'contact_page',
-  '/contact',
-  'GET',
-  ContactController::class,
-  'contact'
-);
+$router->registerRoutes();
 
 try {
   $router->execute($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
