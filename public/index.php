@@ -12,6 +12,7 @@ if (
 use App\Controller\ContactController;
 use App\Controller\IndexController;
 use App\Controller\UserController;
+use App\DependencyInjection\Container;
 use App\Routing\RouteNotFoundException;
 use App\Routing\Router;
 use Doctrine\DBAL\DriverManager;
@@ -49,11 +50,13 @@ $twig = new Environment($loader, [
   'cache' => __DIR__ . '/../var/twig/',
 ]);
 
+$serviceContainer = new Container();
+$serviceContainer
+  ->set(Environment::class, $twig)
+  ->set(EntityManager::class, $entityManager);
+
 // Appeler un routeur pour lui transférer la requête
-$router = new Router([
-  Environment::class => $twig,
-  EntityManager::class => $entityManager
-]);
+$router = new Router($serviceContainer);
 $router->addRoute(
   'homepage',
   '/',
