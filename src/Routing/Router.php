@@ -13,6 +13,12 @@ class Router
 {
   private const CONTROLLERS_GLOB_PATH = __DIR__ . "/../Controller/*Controller.php";
 
+  private array $urlParams = [];
+
+  private array $paramKeys = [];
+
+  private array $indexNum = [];
+
   public function __construct(
     private ContainerInterface $container
   ) {
@@ -32,13 +38,66 @@ class Router
       'url' => $url,
       'http_method' => $httpMethod,
       'controller' => $controllerClass,
-      'method' => $controllerMethod
+      'method' => $controllerMethod,
+      'params' => $this->paramKeys,
+      'index_num' => $this->indexNum,
     ];
   }
 
   public function getRoute(string $uri, string $httpMethod): ?array
   {
     foreach ($this->routes as $route) {
+      $this->urlParams = [];
+      $this->paramKeys = [];
+
+      preg_match_all("/(?<={).+?(?=})/", $uri, $paramsMatches);
+
+      foreach ($paramsMatches[0] as $key) {
+        $this->paramKeys[] = $key;
+      }
+
+      $uri = explode("/", $uri);
+
+      $this->indexNum = [];
+
+      foreach ($uri as $index => $param) {
+        if(preg_match("/{.*}/", $param)) {
+          $this->indexNum[] = $index;
+        }
+      }
+      $reqUri = explode("/", $uri);
+
+        //running for each loop to set the exact index number with reg expression
+        //this will help in matching route
+        foreach($indexNum as $key => $index){
+
+            //in case if req uri with param index is empty then return
+            //because url is not valid for this route
+            if(empty($reqUri[$index])){
+                return;
+            }
+
+            //setting params with params names
+            $params[$paramKey[$key]] = $reqUri[$index];
+
+            //this is to create a regex for comparing route address
+            $reqUri[$index] = "{.*}";
+        }
+
+        //converting array to sting
+        $reqUri = implode("/",$reqUri);
+
+        //replace all / with \/ for reg expression
+        //regex to match route is ready !
+        $reqUri = str_replace("/", '\\/', $reqUri);
+
+        //now matching route with regex
+        if(preg_match("/$reqUri/", $route))
+        {
+            include($file);
+            exit();
+
+        }
       if ($route['url'] === $uri && $route['http_method'] === $httpMethod) {
         return $route;
       }
@@ -125,6 +184,26 @@ class Router
           $routeAttribute = $attributes[0];
           /** @var Route */
           $routeInstance = $routeAttribute->newInstance();
+
+          $this->urlParams = [];
+          $this->paramKeys = [];
+
+          preg_match_all("/(?<={).+?(?=})/", $routeInstance->getPath(), $paramsMatches);
+
+          foreach ($paramsMatches[0] as $key) {
+            $this->paramKeys[] = $key;
+          }
+
+          $uri = explode("/", $routeInstance->getPath());
+
+          $this->indexNum = [];
+
+          foreach ($uri as $index => $param) {
+            if(preg_match("/{.*}/", $param)) {
+              $this->indexNum[] = $index;
+            }
+          }
+
           $this->addRoute(
             $routeInstance->getName(),
             $routeInstance->getPath(),
