@@ -47,38 +47,48 @@ class Router
   public function getRoute(string $uri, string $httpMethod): ?array
   {
     foreach ($this->routes as $route) {
+      $explodedUri = explode("/", $uri);
+      $explodedRoutePath = explode("/", $route['url']);
+
+      if(count($explodedRoutePath) != count($explodedUri)) {
+        continue; 
+      }
+
+
+
       $this->urlParams = [];
       $this->paramKeys = [];
+      $this->indexNum = [];
 
-      preg_match_all("/(?<={).+?(?=})/", $uri, $paramsMatches);
+      preg_match_all("/(?<={).+?(?=})/", $route['url'], $paramsMatches);
 
       foreach ($paramsMatches[0] as $key) {
         $this->paramKeys[] = $key;
       }
 
-      $uri = explode("/", $uri);
 
-      $this->indexNum = [];
 
-      foreach ($uri as $index => $param) {
+      foreach ($$explodedRoutePath as $index => $param) {
         if(preg_match("/{.*}/", $param)) {
           $this->indexNum[] = $index;
         }
       }
-      $reqUri = explode("/", $uri);
+
+      var_dump($reqUri);
+      var_dump($this->indexNum);
 
         //running for each loop to set the exact index number with reg expression
         //this will help in matching route
-        foreach($indexNum as $key => $index){
+        foreach($this->indexNum as $key => $index){
 
             //in case if req uri with param index is empty then return
             //because url is not valid for this route
             if(empty($reqUri[$index])){
-                return;
+                return null;
             }
 
             //setting params with params names
-            $params[$paramKey[$key]] = $reqUri[$index];
+            $params[$this->paramKeys[$key]] = $reqUri[$index];
 
             //this is to create a regex for comparing route address
             $reqUri[$index] = "{.*}";
@@ -91,16 +101,17 @@ class Router
         //regex to match route is ready !
         $reqUri = str_replace("/", '\\/', $reqUri);
 
+        var_dump($route['url']);
+        var_dump($_SERVER['REQUEST_URI']);
+        var_dump("/$reqUri$/");
+        $pattern = "/" . $reqUri . "$/";
+        var_dump(preg_match($pattern, $route['url']));
+        
         //now matching route with regex
-        if(preg_match("/$reqUri/", $route))
+        if(preg_match($pattern, $route['url'], $match, PREG_OFFSET_CAPTURE) && $route['http_method'] === $httpMethod)
         {
-            include($file);
-            exit();
-
+          return $route;
         }
-      if ($route['url'] === $uri && $route['http_method'] === $httpMethod) {
-        return $route;
-      }
     }
 
     return null;
