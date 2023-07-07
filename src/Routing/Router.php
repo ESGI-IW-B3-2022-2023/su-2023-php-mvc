@@ -13,6 +13,8 @@ class Router
 {
   private const CONTROLLERS_GLOB_PATH = __DIR__ . "/../Controller/*Controller.php";
 
+  private array $urlParams = [];
+
   public function __construct(
     private ContainerInterface $container
   ) {
@@ -32,16 +34,48 @@ class Router
       'url' => $url,
       'http_method' => $httpMethod,
       'controller' => $controllerClass,
-      'method' => $controllerMethod
+      'method' => $controllerMethod,
     ];
   }
-
+  
   public function getRoute(string $uri, string $httpMethod): ?array
   {
     foreach ($this->routes as $route) {
-      if ($route['url'] === $uri && $route['http_method'] === $httpMethod) {
-        return $route;
+      $explodedUri = explode("/", $uri);
+      $explodedRoutePath = explode("/", trim($route['url']));
+
+      if(count($explodedRoutePath) != count($explodedUri)) {
+        continue; 
       }
+
+      $this->urlParams = [];
+      $indexNum = [];
+
+      $pattern = "/\/";
+      
+      foreach ($explodedRoutePath as $index => $param) {
+        if ($param){
+          if($index > 1) {
+            $pattern .= "\/"; 
+          }
+          if(preg_match("/{.*}/", $param)) {
+            $indexNum[] = $index;
+            $pattern .= "(\w+)";
+          } else {
+            $pattern .= $param;
+          }
+        }
+      }
+      $pattern .= "$/";
+
+      foreach ($indexNum as $index) {
+        $this->urlParams[] = $explodedUri[$index];
+      }
+
+        if(preg_match($pattern, $uri, $match, PREG_OFFSET_CAPTURE) && $route['http_method'] === $httpMethod)
+        {
+;          return $route;
+        }
     }
 
     return null;
@@ -90,8 +124,11 @@ class Router
 
     foreach ($methodParams as $methodParam) {
       $paramType = $methodParam->getType();
-      $paramTypeName = $paramType->getName();
-      $params[] = $this->container->get($paramTypeName);
+      if($paramType){
+        $paramTypeName = $paramType->getName();
+        $params[] = $this->container->get($paramTypeName);
+      }
+      $params = array_merge($params, $this->urlParams);
     }
 
     return $params;
@@ -125,6 +162,7 @@ class Router
           $routeAttribute = $attributes[0];
           /** @var Route */
           $routeInstance = $routeAttribute->newInstance();
+
           $this->addRoute(
             $routeInstance->getName(),
             $routeInstance->getPath(),
