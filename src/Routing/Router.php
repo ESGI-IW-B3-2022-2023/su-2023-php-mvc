@@ -37,7 +37,7 @@ class Router
       'method' => $controllerMethod,
     ];
   }
-
+  
   public function getRoute(string $uri, string $httpMethod): ?array
   {
     foreach ($this->routes as $route) {
