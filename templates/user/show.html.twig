@@ -1,4 +1,7 @@
 <h1>Client info</h1>
-<p>{{client.firstname}}</p>
-<p>{{client.name}}</p>
-<p>{{client.accountNumber}}</p>
+
+{% for client in clients %}
+  <p>Nom : {{client.name}}</p>
+  <p>Prénom : {{client.firstname}}</p>
+  <p>Numéro de compte : {{client.accountNumber}}</p>
+{% endfor %}

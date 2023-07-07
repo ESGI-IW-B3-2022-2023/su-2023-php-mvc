@@ -96,4 +96,17 @@ class UserController extends AbstractController
       ['client' => $client]
     );
   }
+
+  #[Route('/user/name/{name}', name: 'user_show')]
+  public function showByName($name): string
+  {
+    $clients = $this->em->getRepository(Client::class)->findByNameInOrder($name);
+
+    var_dump($clients);
+
+    return $this->twig->render(
+      'user/show.html.twig',
+      ['clients' => $clients]
+    );
+  }
 }
