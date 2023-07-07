@@ -14,11 +14,23 @@ class UserController extends AbstractController
     $userNames = ['Lisa', 'Kevin', 'Emma', 'David', 'Louis', 'Etienne', 'Jerome', 'Louise', 'Didier'];
 
     foreach ($userNames as $name) {
+        // Vérification de la validité du nom
+        if(empty($name)) {
+            // Message si le nom est vide
+            echo 'Le nom ne peut pas être vide';
+        }
+
+        if(strlen($name) > 50) {
+            // Message si le nom depasse 50 caractères
+            echo 'Le nom est trop long';
+        }
+
+        // Si le nom passe les contrôles de validation, alors création de l'utilisateur
         $user = new User();
         $user->setName($name);
         $em->persist($user);
     }
-    $em->flush();    
+    $em->flush();
 
     return $this->twig->render(
       'user/create_confirm.html.twig',
