@@ -2,14 +2,17 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
+use App\Entity\Client;
+use App\Repository\ClientRepository;
 use App\Routing\Attribute\Route;
-use Doctrine\ORM\EntityManager;
+use Pagerfanta\Adapter\ArrayAdapter;
+use Pagerfanta\Doctrine\Collections\CollectionAdapter;
+use Pagerfanta\Pagerfanta;
 
 class UserController extends AbstractController
 {
-  #[Route("/user/create", name: "add_user")]
-  public function create(EntityManager $em): string
+  #[Route('/user/create', name: 'user_create')]
+  public function create(): string
   {
     $userNames = ['Lisa', 'Kevin', 'Emma', 'David', 'Louis', 'Etienne', 'Jerome', 'Louise', 'Didier'];
 
@@ -28,11 +31,13 @@ class UserController extends AbstractController
           }
 
           // Si le nom passe les contrôles de validation, alors création de l'utilisateur
-          $user = new User();
-          $user->setName($name);
-          $em->persist($user);
+          $client = new Client();
+          $client->setName($name);
+          $client->setFirstname($name);
+          $client->setAccountNumber('0006344');
+          $this->em->persist($client);
       }
-      $em->flush();
+      $this->em->flush();
     }
     catch (\Exception $e) {
       echo 'Une erreur est survenue : ' . $e->getMessage();
@@ -40,7 +45,25 @@ class UserController extends AbstractController
 
     return $this->twig->render(
       'user/create_confirm.html.twig',
-      ['user' => $user]
+      ['client' => $client]
+    );
+  }
+
+  #[Route('/user/list', name: 'user_index')]
+  public function index(): string
+  {
+    $clients = $this->em->getRepository(Client::class)->findAllPaginated();
+
+    var_dump($clients);
+
+    $adapter = new ArrayAdapter($clients);
+    $pagerfanta = new PagerFanta($adapter);
+
+    $pagerfanta->setMaxPerPage(1);
+
+    return $this->twig->render(
+      'user/index.html.twig',
+      ['clients' => $pagerfanta]
     );
   }
 }
