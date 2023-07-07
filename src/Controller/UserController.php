@@ -49,21 +49,51 @@ class UserController extends AbstractController
     );
   }
 
-  #[Route('/user/list', name: 'user_index')]
-  public function index(): string
+  #[Route('/users/page/{idPage}', name: 'user_index')]
+  public function index($idPage = 1): string
   {
     $clients = $this->em->getRepository(Client::class)->findAllPaginated();
 
-    var_dump($clients);
 
     $adapter = new ArrayAdapter($clients);
     $pagerfanta = new PagerFanta($adapter);
 
-    $pagerfanta->setMaxPerPage(1);
+    $pagerfanta->setMaxPerPage(2);
+
+    $pagerfanta->setCurrentPage($idPage);
+
+    $url = $_SERVER['REQUEST_URI'];
+
+    $previousPage = $idPage - 1 > 0 ? $idPage - 1 : 1;
+    $explodeUrl = explode('/', $url);
+    $explodeUrl[count($explodeUrl) - 1] = $previousPage;
+    
+    $urlPreviousPage = implode('/', $explodeUrl);
+
+    $nextPage = $idPage + 1 < $pagerfanta->getNbPages() ? $idPage + 1 : $pagerfanta->getNbPages();
+    $explodeUrl[count($explodeUrl) - 1] = $nextPage;
+    $urlNextPage = implode('/', $explodeUrl);
 
     return $this->twig->render(
       'user/index.html.twig',
-      ['clients' => $pagerfanta]
+      [
+        'clients' => $pagerfanta,
+        'urlPreviousPage' => $urlPreviousPage,
+        'urlNextPage' => $urlNextPage,
+        ]
+    );
+  }
+
+  #[Route('/user/{idUser}', name: 'user_show')]
+  public function show($idUser): string
+  {
+    $client = $this->em->getRepository(Client::class)->find(1);
+
+    var_dump($client);
+
+    return $this->twig->render(
+      'user/show.html.twig',
+      ['client' => $client]
     );
   }
 }

@@ -127,9 +127,9 @@ class Router
       if($paramType){
         $paramTypeName = $paramType->getName();
         $params[] = $this->container->get($paramTypeName);
-      }
-      $params = array_merge($params, $this->urlParams);
+      }    
     }
+    $params = array_merge($params, $this->urlParams);
 
     return $params;
   }

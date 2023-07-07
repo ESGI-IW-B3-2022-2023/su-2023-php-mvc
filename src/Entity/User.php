@@ -6,7 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 
 #[ORM\MappedSuperclass]
-class User
+abstract class User
 {
   #[ORM\Id]
   #[ORM\Column(type: 'integer')]
@@ -31,7 +31,7 @@ class User
     return $this;
   }
 
-  public function getFirstame(): string
+  public function getFirstname(): string
   {
     return $this->firstname;
   }

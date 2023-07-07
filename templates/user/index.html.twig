@@ -3,5 +3,15 @@
 
 
 {% for client in clients %}
-  {{client.name}}
+  <p>{{client.name}}</p>
+  {% else %}
+  <p>No clients found</p>
 {% endfor %}
+
+{% if clients.hasPreviousPage %}
+  <a href="{{urlPreviousPage}}">Previous</a>
+{% endif %}
+
+{% if clients.hasNextPage %}
+  <a href="{{urlNextPage}}">Next</a>
+{% endif %}
